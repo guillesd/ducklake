@@ -123,7 +123,6 @@ struct DuckLakeCopyOptions {
 	CopyOverwriteMode overwrite_mode;
 	bool per_thread_output;
 	optional_idx file_size_bytes;
-	bool rotate;
 	CopyFunctionReturnType return_type;
 	bool hive_file_pattern;
 
@@ -152,7 +151,7 @@ struct DuckLakeCopyInput {
 	SchemaIndex schema_id;
 	TableIndex table_id;
 	InsertVirtualColumns virtual_columns = InsertVirtualColumns::NONE;
-	optional_idx get_table_index;
+	TableIndex get_table_index;
 };
 
 } // namespace duckdb

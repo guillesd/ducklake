@@ -34,7 +34,7 @@ namespace duckdb {
 //===--------------------------------------------------------------------===//
 
 //! Binds ORDER BY expressions directly using ExpressionBinder.
-static vector<BoundOrderByNode> BindSortOrders(Binder &binder, const string &table_name, idx_t table_index,
+static vector<BoundOrderByNode> BindSortOrders(Binder &binder, const string &table_name, TableIndex table_index,
                                                const vector<string> &column_names,
                                                const vector<LogicalType> &column_types,
                                                vector<OrderByNode> &pre_bound_orders) {
@@ -576,7 +576,6 @@ DuckLakeCompactor::GenerateCompactionCommand(vector<DuckLakeCompactionFileEntry>
 	copy->overwrite_mode = copy_options.overwrite_mode;
 	copy->per_thread_output = false;
 	copy->file_size_bytes = copy_options.file_size_bytes;
-	copy->rotate = copy_options.rotate;
 	copy->return_type = copy_options.return_type;
 
 	copy->partition_output = copy_options.partition_output;
@@ -606,16 +605,16 @@ DuckLakeCompactor::GenerateCompactionCommand(vector<DuckLakeCompactionFileEntry>
 //===--------------------------------------------------------------------===//
 // Function
 //===--------------------------------------------------------------------===//
-static unique_ptr<LogicalOperator> GenerateCompactionOperator(TableFunctionBindInput &input, idx_t bind_index,
+static unique_ptr<LogicalOperator> GenerateCompactionOperator(TableFunctionBindInput &input, TableIndex bind_index,
                                                               vector<unique_ptr<LogicalOperator>> &compactions) {
 	if (compactions.empty()) {
 		// nothing to compact - generate an empty result
 		vector<ColumnBinding> bindings;
 		vector<LogicalType> return_types;
-		bindings.emplace_back(bind_index, 0);
-		bindings.emplace_back(bind_index, 1);
-		bindings.emplace_back(bind_index, 2);
-		bindings.emplace_back(bind_index, 3);
+		bindings.emplace_back(bind_index, ProjectionIndex(0));
+		bindings.emplace_back(bind_index, ProjectionIndex(1));
+		bindings.emplace_back(bind_index, ProjectionIndex(2));
+		bindings.emplace_back(bind_index, ProjectionIndex(3));
 		return_types.emplace_back(LogicalType::VARCHAR);
 		return_types.emplace_back(LogicalType::VARCHAR);
 		return_types.emplace_back(LogicalType::BIGINT);
@@ -682,7 +681,7 @@ double GetDeleteThreshold(optional_ptr<DuckLakeSchemaEntry> schema_entry, const 
 	return delete_threshold;
 }
 
-unique_ptr<LogicalOperator> BindCompaction(ClientContext &context, TableFunctionBindInput &input, idx_t bind_index,
+unique_ptr<LogicalOperator> BindCompaction(ClientContext &context, TableFunctionBindInput &input, TableIndex bind_index,
                                            CompactionType type) {
 	auto &catalog = DuckLakeBaseMetadataFunction::GetCatalog(context, input.inputs[0]);
 	auto &ducklake_catalog = catalog.Cast<DuckLakeCatalog>();
@@ -780,7 +779,7 @@ unique_ptr<LogicalOperator> BindCompaction(ClientContext &context, TableFunction
 }
 
 static unique_ptr<LogicalOperator> MergeAdjacentFilesBind(ClientContext &context, TableFunctionBindInput &input,
-                                                          idx_t bind_index, vector<string> &return_names) {
+                                                          TableIndex bind_index, vector<string> &return_names) {
 	return_names.push_back("schema_name");
 	return_names.push_back("table_name");
 	return_names.push_back("files_processed");
@@ -806,7 +805,7 @@ TableFunctionSet DuckLakeMergeAdjacentFilesFunction::GetFunctions() {
 }
 
 static unique_ptr<LogicalOperator> RewriteFilesBind(ClientContext &context, TableFunctionBindInput &input,
-                                                    idx_t bind_index, vector<string> &return_names) {
+                                                    TableIndex bind_index, vector<string> &return_names) {
 	return_names.push_back("schema_name");
 	return_names.push_back("table_name");
 	return_names.push_back("files_processed");

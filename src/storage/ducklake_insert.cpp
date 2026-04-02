@@ -373,7 +373,7 @@ static unique_ptr<Expression> CreateColumnReference(DuckLakeCopyInput &copy_inpu
                                                     idx_t column_index) {
 	if (copy_input.get_table_index.IsValid()) {
 		// logical plan generation: generate a bound column ref
-		ColumnBinding column_binding(copy_input.get_table_index.GetIndex(), column_index);
+		ColumnBinding column_binding(copy_input.get_table_index, ProjectionIndex(column_index));
 		return make_uniq<BoundColumnRefExpression>(type, column_binding);
 	}
 	// physical plan generation: generate a reference directly
@@ -583,14 +583,14 @@ DuckLakeCopyOptions DuckLakeInsert::GetCopyOptions(ClientContext &context, DuckL
 		result.filename_pattern.SetFilenamePattern("ducklake-{uuidv7}");
 		result.partition_output = true;
 		result.write_empty_file = true;
-		result.rotate = false;
+		// rotate is now derived from file_size_bytes being set
 	} else {
 		result.filename_pattern.SetFilenamePattern("ducklake-{uuidv7}");
 		result.partition_output = false;
 		result.write_empty_file = false;
 		// file_size_bytes is currently only supported for unpartitioned writes
 		result.file_size_bytes = target_file_size;
-		result.rotate = true;
+		// rotate is now derived from file_size_bytes being set
 	}
 	result.file_path = copy_input.data_path;
 	StripTrailingSeparator(fs, result.file_path);
@@ -703,7 +703,7 @@ PhysicalOperator &DuckLakeInsert::PlanCopyForInsert(ClientContext &context, Phys
 	physical_copy.overwrite_mode = copy_options.overwrite_mode;
 	physical_copy.per_thread_output = copy_options.per_thread_output;
 	physical_copy.file_size_bytes = copy_options.file_size_bytes;
-	physical_copy.rotate = copy_options.rotate;
+	// rotate is now derived from file_size_bytes being set
 	physical_copy.return_type = copy_options.return_type;
 
 	physical_copy.partition_output = copy_options.partition_output;

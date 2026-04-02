@@ -52,7 +52,7 @@ static void AddSnapshotFilter(BaseFileReader &reader, const ColumnIndex &col_idx
                               idx_t snapshot_value, ExpressionType comparison_type) {
 	auto constant = Value::UBIGINT(snapshot_value).DefaultCastAs(col_type);
 	auto filter = make_uniq<ConstantFilter>(comparison_type, std::move(constant));
-	reader.filters->PushFilter(col_idx, std::move(filter));
+	reader.filters->PushFilter(ProjectionIndex(col_idx.GetPrimaryIndex()), std::move(filter));
 }
 
 // recursively normalize LIST child names from legacy formats blame legacy Avro/Parquet formats
