@@ -238,6 +238,10 @@ public:
 	static bool IsTransactionLocal(idx_t id) {
 		return id >= DuckLakeConstants::TRANSACTION_LOCAL_ID_START;
 	}
+	static bool IsTransactionLocal(const TableIndex &id) {
+		D_ASSERT(id.IsValid());
+		return id.index >= DuckLakeConstants::TRANSACTION_LOCAL_ID_START;
+	}
 	void SetConfigOption(const DuckLakeConfigOption &option);
 
 	void SetCommitMessage(const DuckLakeSnapshotCommit &option);
